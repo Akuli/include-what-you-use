@@ -134,7 +134,26 @@ string NormalizeFilePath(const string& path) {
   std::replace(normalized.begin(), normalized.end(), '\\', '/');
 #endif
 
-  return normalized.str();
+  const string str = normalized.str();
+  char *res = new char[str.length()+1];
+  strcpy(res, str.c_str());
+
+  // replace "a/../b" with "b", and "a/b/../c" with "a/c"
+  // note: this may break with funny symlinkings
+  // TODO: replace this c shit with c++ string functions
+  char *dotdot;
+  while((dotdot = strstr(res, "/../"))) {
+    char *p = dotdot;
+    while(p > res && *--p != '/')
+      ;
+    if(p != res)
+      p++;
+    memmove(p, dotdot+4, res + strlen(res) - dotdot - 4 + 1);
+  }
+
+  std::string stringres (res);
+  delete res;
+  return stringres;
 }
 
 string NormalizeDirPath(const string& path) {
